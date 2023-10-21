@@ -17,6 +17,7 @@ def set_seed(seed):
 
 def get_tokenizer(model):
     if "codellama" in model.lower():
+      print("using codellama tokenizer")
       tokenizer = CodeLlamaTokenizer.from_pretrained(model, use_fast=False)
       print("using codellama tokenizer" )
       if tokenizer.bos_token_id != 1 or tokenizer.eos_token_id != 2:
@@ -26,6 +27,7 @@ def get_tokenizer(model):
             except AttributeError:
                 pass
     elif "llama" in model.lower():
+        print("using llama tokenizer")
         tokenizer = LlamaTokenizer.from_pretrained(model, use_fast=False)
         # fix for transformer 4.28.0.dev0 compatibility
         if tokenizer.bos_token_id != 1 or tokenizer.eos_token_id != 2:
@@ -142,6 +144,7 @@ def get_code(nsamples, seed, seqlen, model, tokenizer):
 
 
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, model=''):
+    print("get_loaders")
     tokenizer = get_tokenizer(model)
     if 'wikitext2' in name:
         return get_wikitext2(nsamples, seed, seqlen, model, tokenizer)
