@@ -4,7 +4,12 @@ import numpy as np
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, LlamaTokenizer, CodeLlamaTokenizer
+import multiprocessing as mp
+from functools import partial
+import datasets
 
+def tokenize_content(content, tokenizer):
+    return tokenizer(content, return_tensors='pt').input_ids[0]
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -12,7 +17,7 @@ def set_seed(seed):
 
 def get_tokenizer(model):
     if "codellama" in model.lower():
-      CodeLlamaTokenizer.from_pretrained(model, use_fast=False)
+      tokenizer = CodeLlamaTokenizer.from_pretrained(model, use_fast=False)
       print("using codellama tokenizer" )
       if tokenizer.bos_token_id != 1 or tokenizer.eos_token_id != 2:
             try:
@@ -106,23 +111,35 @@ def get_c4(nsamples, seed, seqlen, model, tokenizer):
     return trainloader, valenc
 
 
-def get_code(nsamples, seed, seqlen, model, tokenizer):
-    traindata = load_dataset("codeparrot/codeparrot-clean-train", split = ['train[:50%]']) 
-    valdata = load_dataset("codeparrot/codeparrot-clean-valid", split = ['val[:50%]']) 
 
-    trainenc = tokenizer(" ".join(traindata['sentence']), return_tensors='pt')
-    testenc = tokenizer(" ".join(valdata['sentence']), return_tensors='pt')
+
+def get_code(nsamples, seed, seqlen, model, tokenizer):
+
+    instruction = datasets.ReadInstruction('train', from_ = 0, to=0.01, unit= '%')
+    traindata = load_dataset("codeparrot/codeparrot-clean-train", split = [instruction]) 
+    valdata = load_dataset("codeparrot/codeparrot-clean-valid", split = [instruction]) 
+
+    with mp.Pool(processes = mp.cpu_count()) as p:
+        trainenc_list = p.map(partial(tokenize_content, tokenizer = tokenizer), traindata[0]['content'])
+        valenc_list = p.map(partial(tokenize_content, tokenizer = tokenizer), valdata[0]['content'])
+
 
     random.seed(seed)
     trainloader = []
+
     for _ in range(nsamples):
-        i = random.randint(0, trainenc.input_ids.shape[1] - seqlen - 1)
-        j = i + seqlen
-        inp = trainenc.input_ids[:, i:j]
-        tar = inp.clone()
-        tar[:, :-1] = -100
-        trainloader.append((inp, tar))
-    return trainloader, testenc
+        # Randomly select a sequence from the list of tokenized sequences for training data
+        random_train_sequence = random.choice(trainenc_list)
+        
+        # Ensure the sequence is long enough
+        if len(random_train_sequence) > seqlen:
+            i = random.randint(0, len(random_train_sequence) - seqlen - 1)
+            j = i + seqlen
+            inp = random_train_sequence[i:j].unsqueeze(0)  # Add batch dimension
+            tar = inp.clone()
+            tar[:, :-1] = -100
+            trainloader.append((inp, tar))
+    return trainloader, valenc_list
 
 
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, model=''):
@@ -135,3 +152,4 @@ def get_loaders(name, nsamples=128, seed=0, seqlen=2048, model=''):
         return get_c4(nsamples, seed, seqlen, model, tokenizer)
     if 'code' in name:
         return get_code(nsamples, seed, seqlen, model, tokenizer)
+
