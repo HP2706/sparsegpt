@@ -327,7 +327,9 @@ if __name__ == "__main__":
                 break
         print(time.time() - tick)
 
+    print("Evaluating ...")
     if "code" in args.dataset: 
+        print("eval on code dataset")
         dataloader, testloader = get_loaders(
             "code", seed=args.seed, model=args.model, seqlen=model.seqlen
         )
