@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from datasets import load_dataset
-from transformers import AutoTokenizer, LlamaTokenizer, CodeLlamaTokenizer
+from transformers import AutoTokenizer, LlamaTokenizer
 import multiprocessing as mp
 from functools import partial
 import datasets
@@ -18,7 +18,7 @@ def set_seed(seed):
 def get_tokenizer(model):
     if "codellama" in model.lower():
       print("using codellama tokenizer")
-      tokenizer = CodeLlamaTokenizer.from_pretrained(model, use_fast=False)
+      tokenizer = AutoTokenizer.from_pretrained(model, use_fast=False)
       print("using codellama tokenizer" )
       if tokenizer.bos_token_id != 1 or tokenizer.eos_token_id != 2:
             try:
