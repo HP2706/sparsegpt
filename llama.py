@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "dataset",
         type=str,
-        choices=["wikitext2", "ptb", "c4"],
+        choices=["wikitext2", "ptb", "c4", "code"],
         help="Where to extract calibration data from.",
     )
     parser.add_argument(
@@ -327,12 +327,17 @@ if __name__ == "__main__":
                 break
         print(time.time() - tick)
 
-    for dataset in ["wikitext2", "ptb", "c4"]:
+    if "code" in args.dataset: 
         dataloader, testloader = get_loaders(
-            dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
+            "code", seed=args.seed, model=args.model, seqlen=model.seqlen
         )
-        print("Dataset:", dataset)
-        llama_eval(model, testloader, DEV, dataset, args.log_wandb)
+    else:
+        for dataset in ["wikitext2", "ptb", "c4"]:
+            dataloader, testloader = get_loaders(
+                dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
+            )
+            print("Dataset:", dataset)
+            llama_eval(model, testloader, DEV, dataset, args.log_wandb)
 
     if args.save:
         model.save_pretrained(args.save)
