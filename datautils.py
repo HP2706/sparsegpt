@@ -115,7 +115,7 @@ def get_c4(nsamples, seed, seqlen, model, tokenizer):
 
 def get_code(nsamples, seed, seqlen, model, tokenizer):
 
-    instruction = datasets.ReadInstruction('train', from_ = 0, to=0.01, unit= '%')
+    instruction = datasets.ReadInstruction('train', from_ = 0, to=0.001, unit= '%')
     traindata = load_dataset("codeparrot/codeparrot-clean-train", split = [instruction]) 
     valdata = load_dataset("codeparrot/codeparrot-clean-valid", split = [instruction]) 
 
