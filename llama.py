@@ -311,13 +311,16 @@ if __name__ == "__main__":
         assert has_wandb, "wandb not installed try `pip install wandb`"
         wandb.init(config=args)
 
+    print("Loading model ...")
     model = get_llama(args.model)
     model.eval()
 
+    print("Loading data ... args.dataset:", args.dataset)
     dataloader, testloader = get_loaders(
         args.dataset, nsamples=args.nsamples, seed=args.seed, model=args.model, seqlen=model.seqlen
     )
 
+    print("Calibrating ...")
     if (args.sparsity or args.prunen) and not args.gmp:
         tick = time.time()
         llama_sequential(model, dataloader, DEV)
@@ -335,11 +338,13 @@ if __name__ == "__main__":
         )
     else:
         for dataset in ["wikitext2", "ptb", "c4"]:
+            print("eval on", dataset)
             dataloader, testloader = get_loaders(
                 dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
             )
             print("Dataset:", dataset)
-            llama_eval(model, testloader, DEV, dataset, args.log_wandb)
+    
+    llama_eval(model, testloader, DEV, dataset, args.log_wandb)
 
     if args.save:
         model.save_pretrained(args.save)
