@@ -19,7 +19,7 @@ def get_tokenizer(model):
     if "codellama" in model.lower():
       print("using codellama tokenizer")
       tokenizer = AutoTokenizer.from_pretrained(model, use_fast=False)
-      print("using codellama tokenizer" )
+      print("finished downloading tokenizer")
       if tokenizer.bos_token_id != 1 or tokenizer.eos_token_id != 2:
             try:
                 tokenizer.bos_token_id = 1
@@ -115,9 +115,11 @@ def get_c4(nsamples, seed, seqlen, model, tokenizer):
 
 
 def get_code(nsamples, seed, seqlen, model, tokenizer):
+    print("get_code")
     instruction = datasets.ReadInstruction('train', from_ = 0, to=0.001, unit= '%')
     traindata = load_dataset("codeparrot/codeparrot-clean-train", split = [instruction]) 
     valdata = load_dataset("codeparrot/codeparrot-clean-valid", split = [instruction]) 
+    print("loaded dataset get_code")
 
     with mp.Pool(processes = mp.cpu_count()) as p:
         trainenc_list = p.map(partial(tokenize_content, tokenizer = tokenizer), traindata[0]['content'])
@@ -145,6 +147,7 @@ def get_code(nsamples, seed, seqlen, model, tokenizer):
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, model=''):
     print("get_loaders")
     tokenizer = get_tokenizer(model)
+    print("get_loader params", name, nsamples, seed, seqlen, model)
     if 'wikitext2' in name:
         return get_wikitext2(nsamples, seed, seqlen, model, tokenizer)
     if 'ptb' in name:
