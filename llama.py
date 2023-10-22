@@ -6,6 +6,7 @@ import torch.nn as nn
 from sparsegpt import *
 from modelutils import *
 from quant import *
+import datasets 
 
 try:
     import wandb
@@ -330,12 +331,16 @@ if __name__ == "__main__":
                 break
         print(time.time() - tick)
 
+    if args.save:
+        model.save_pretrained(args.save)
+
     print("Evaluating ...")
     if "code" in args.dataset: 
         print("eval on code dataset")
         dataloader, testloader = get_loaders(
             "code", seed=args.seed, model=args.model, seqlen=model.seqlen
         )
+        llama_eval(model, testloader, DEV, "code", args.log_wandb)
     else:
         for dataset in ["wikitext2", "ptb", "c4"]:
             print("eval on", dataset)
@@ -344,7 +349,6 @@ if __name__ == "__main__":
             )
             print("Dataset:", dataset)
     
-    llama_eval(model, testloader, DEV, dataset, args.log_wandb)
+            llama_eval(model, testloader, DEV, dataset, args.log_wandb)
 
-    if args.save:
-        model.save_pretrained(args.save)
+
