@@ -111,11 +111,11 @@ def get_c4(nsamples, seed, seqlen, model, tokenizer):
 
     return trainloader, valenc
 
+
 def get_code(nsamples , seed , seqlen , model , tokenizer):
     print("Loading the openai_humaneval dataset...")
     data = load_dataset("openai_humaneval", split = "test")
     traindata = data   
-    print(traindata)
     print("Tokenizing the dataset...")
     prompts = tokenizer(" ".join(traindata['prompt']), return_tensors='pt', truncation=True, max_length=4096)
     completions = tokenizer(" ".join(traindata['canonical_solution']), return_tensors='pt', truncation=True, max_length=4096)
@@ -131,7 +131,7 @@ def get_code(nsamples , seed , seqlen , model , tokenizer):
         tar[:, :-1] = -100
         trainloader.append((inp, tar))
     
-    testloader = completions  # This can be modified based on how you want to use the test data
+    testloader = completions 
     
     print("Finished processing.")
     return trainloader, testloader
