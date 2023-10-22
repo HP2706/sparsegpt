@@ -111,37 +111,30 @@ def get_c4(nsamples, seed, seqlen, model, tokenizer):
 
     return trainloader, valenc
 
+def get_code(nsamples , seed , seqlen , model , tokenizer):
+    print("Loading the openai_humaneval dataset...")
+    data = load_dataset("openai_humaneval", split = "test")
+    traindata = data   
+    print(traindata)
+    print("Tokenizing the dataset...")
+    prompts = tokenizer(" ".join(traindata['prompt']), return_tensors='pt', truncation=True, max_length=4096)
+    completions = tokenizer(" ".join(traindata['canonical_solution']), return_tensors='pt', truncation=True, max_length=4096)
 
-
-
-def get_code(nsamples, seed, seqlen, model, tokenizer):
-    print("get_code")
-    instruction = datasets.ReadInstruction('train', from_ = 0, to=0.001, unit= '%')
-    traindata = load_dataset("codeparrot/codeparrot-clean-train", split = [instruction]) 
-    valdata = load_dataset("codeparrot/codeparrot-clean-valid", split = [instruction]) 
-    print("loaded dataset get_code")
-
-    with mp.Pool(processes = mp.cpu_count()) as p:
-        trainenc_list = p.map(partial(tokenize_content, tokenizer = tokenizer), traindata[0]['content'])
-        valenc_list = p.map(partial(tokenize_content, tokenizer = tokenizer), valdata[0]['content'])
-
-
+    print("Preparing sequences...")
     random.seed(seed)
     trainloader = []
-
     for _ in range(nsamples):
-        # Randomly select a sequence from the list of tokenized sequences for training data
-        random_train_sequence = random.choice(trainenc_list)
-        
-        # Ensure the sequence is long enough
-        if len(random_train_sequence) > seqlen:
-            i = random.randint(0, len(random_train_sequence) - seqlen - 1)
-            j = i + seqlen
-            inp = random_train_sequence[i:j].unsqueeze(0)  # Add batch dimension
-            tar = inp.clone()
-            tar[:, :-1] = -100
-            trainloader.append((inp, tar))
-    return trainloader, valenc_list
+        i = random.randint(0, prompts.input_ids.shape[1] - seqlen - 1)
+        j = i + seqlen
+        inp = prompts.input_ids[:, i:j]
+        tar = inp.clone()
+        tar[:, :-1] = -100
+        trainloader.append((inp, tar))
+    
+    testloader = completions  # This can be modified based on how you want to use the test data
+    
+    print("Finished processing.")
+    return trainloader, testloader
 
 
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, model=''):
